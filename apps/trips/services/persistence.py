@@ -50,7 +50,7 @@ def _build_route(trip: Trip, route: EvaluatedRoute, request: TripRequest, recomm
         arrival_at=request.departure_at + timedelta(seconds=route.path.duration_seconds),
         risk_miles={level.key: round(miles, 1) for level, miles in route.risk_miles.items()},
         unknown_miles=round(route.unknown_miles, 1),
-        average_risk=round(route.average_risk, 3),
+        average_risk=round(route.average_risk, 3) if route.average_risk is not None else None,
         max_risk=route.max_risk,
         forecast_coverage=round(route.forecast_coverage, 3),
         is_recommended=recommended,

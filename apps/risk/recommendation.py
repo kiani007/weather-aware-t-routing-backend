@@ -4,6 +4,7 @@ Unverified (unknown-weather) miles rank right after Severe: a route must not win
 because part of it has no forecast, but a verified Severe stretch is still worse.
 """
 
+import math
 from dataclasses import dataclass
 
 from .domain import RiskLevel
@@ -17,7 +18,7 @@ class RouteScore:
     route_index: int
     risk_miles: dict[RiskLevel, float]
     unknown_miles: float
-    average_risk: float
+    average_risk: float | None
     duration_seconds: float
 
     def miles(self, level: RiskLevel) -> float:
@@ -28,13 +29,18 @@ class RouteScore:
         return round(self.unknown_miles, MILES_PRECISION)
 
     @property
+    def ranked_average(self) -> float:
+        # No verified weather at all ranks as the worst average, so missing data never wins a tie
+        return math.inf if self.average_risk is None else round(self.average_risk, RISK_PRECISION)
+
+    @property
     def sort_key(self) -> tuple:
         return (
             self.miles(RiskLevel.NO_TRAVEL),
             self.miles(RiskLevel.SEVERE),
             self.unverified_miles,
             self.miles(RiskLevel.HIGH),
-            round(self.average_risk, RISK_PRECISION),
+            self.ranked_average,
             self.duration_seconds,
         )
 
@@ -50,7 +56,7 @@ CRITERIA = (
     ("Lowest Severe-risk mileage", lambda s: s.miles(RiskLevel.SEVERE), "{:.1f} mi"),
     ("Less unverified weather", lambda s: s.unverified_miles, "{:.1f} mi"),
     ("Lowest High-risk mileage", lambda s: s.miles(RiskLevel.HIGH), "{:.1f} mi"),
-    ("Lowest average weather risk", lambda s: round(s.average_risk, RISK_PRECISION), "{:.2f}"),
+    ("Lowest average weather risk", lambda s: s.ranked_average, "{:.2f}"),
     ("Equal weather risk and the shortest travel time", lambda s: s.duration_seconds / 3600, "{:.1f} h"),
 )
 
@@ -66,6 +72,10 @@ def recommend(scores: list[RouteScore]) -> Recommendation:
         if value(best) != value(runner_up):
             return Recommendation(
                 best.route_index,
-                f"{label} ({fmt.format(value(best))} vs {fmt.format(value(runner_up))} on the next best route).",
+                f"{label} ({_format(fmt, value(best))} vs {_format(fmt, value(runner_up))} on the next best route).",
             )
     return Recommendation(best.route_index, "Routes are equivalent; the first option was chosen.")
+
+
+def _format(fmt: str, value: float) -> str:
+    return "unknown" if math.isinf(value) else fmt.format(value)

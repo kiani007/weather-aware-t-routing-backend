@@ -60,6 +60,8 @@ class TripPlanApiTests(TestCase):
         self.assertEqual(route["unknown_miles"], 200.0)
         self.assertEqual(route["risk_miles"]["low"], 0.0)
         self.assertEqual(route["forecast_coverage"], 0.0)
+        self.assertIsNone(route["max_risk"])
+        self.assertIsNone(route["average_risk"])
         checkpoint = route["checkpoints"][0]
         self.assertFalse(checkpoint["has_forecast"])
         self.assertIsNone(checkpoint["risk"])

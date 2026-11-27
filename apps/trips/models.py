@@ -56,8 +56,10 @@ class Route(models.Model):
     arrival_at = models.DateTimeField()
     risk_miles = models.JSONField(default=dict)
     unknown_miles = models.FloatField(default=0.0, help_text="Miles whose weather could not be verified.")
-    average_risk = models.FloatField()
-    max_risk = models.PositiveSmallIntegerField(choices=RiskLevelChoices.choices)
+    average_risk = models.FloatField(null=True, help_text="Null when no checkpoint has a forecast.")
+    max_risk = models.PositiveSmallIntegerField(
+        choices=RiskLevelChoices.choices, null=True, help_text="Null when no checkpoint has a forecast."
+    )
     forecast_coverage = models.FloatField(help_text="Share of checkpoints with forecast data (0–1).")
     is_recommended = models.BooleanField(default=False)
     recommendation_reason = models.CharField(max_length=255, blank=True)

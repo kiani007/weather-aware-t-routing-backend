@@ -38,7 +38,8 @@ class EvaluatedRoute:
     risk_miles: dict[RiskLevel, float]
     # Miles whose weather could not be verified
     unknown_miles: float
-    # Averaged over known miles only, so missing data cannot make a route look safer
-    average_risk: float
-    max_risk: RiskLevel
+    # Averaged over known miles only, so missing data cannot make a route look safer.
+    # Both are None when no checkpoint on the route has a forecast.
+    average_risk: float | None
+    max_risk: RiskLevel | None
     forecast_coverage: float
