@@ -21,6 +21,12 @@ class HourlySeriesTests(SimpleTestCase):
     def test_outside_window_returns_none(self):
         self.assertIsNone(SERIES.at(datetime.fromtimestamp(T0 + 7200, timezone.utc)))
 
+    def test_missing_value_is_unknown_not_zero(self):
+        series = HourlySeries((T0, T0 + 3600), (10.0, None), (0.0, 0.0), (0.0, 0.0))
+        self.assertIsNotNone(series.at(datetime.fromtimestamp(T0, timezone.utc)))
+        self.assertIsNone(series.at(datetime.fromtimestamp(T0 + 1800, timezone.utc)))
+        self.assertIsNone(series.hour(T0 + 3600))
+
 
 class CorridorGridTests(SimpleTestCase):
     def test_grid_respects_point_budget(self):

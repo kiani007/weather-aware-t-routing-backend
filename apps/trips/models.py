@@ -55,6 +55,7 @@ class Route(models.Model):
     duration_s = models.FloatField()
     arrival_at = models.DateTimeField()
     risk_miles = models.JSONField(default=dict)
+    unknown_miles = models.FloatField(default=0.0, help_text="Miles whose weather could not be verified.")
     average_risk = models.FloatField()
     max_risk = models.PositiveSmallIntegerField(choices=RiskLevelChoices.choices)
     forecast_coverage = models.FloatField(help_text="Share of checkpoints with forecast data (0–1).")
@@ -81,7 +82,9 @@ class Checkpoint(models.Model):
     wind_mph = models.FloatField(null=True)
     rain_in_hr = models.FloatField(null=True)
     snow_in_hr = models.FloatField(null=True)
-    risk_level = models.PositiveSmallIntegerField(choices=RiskLevelChoices.choices)
+    risk_level = models.PositiveSmallIntegerField(
+        choices=RiskLevelChoices.choices, null=True, help_text="Null when the weather is unknown."
+    )
     reasons = models.JSONField(default=list)
 
     class Meta:

@@ -49,6 +49,21 @@ class TripPlanApiTests(TestCase):
         self.assertEqual(routes[0]["max_risk"]["key"], "no_travel")
         self.assertEqual(Trip.objects.count(), 1)
 
+    @mock.patch("apps.weather.services.WeatherService.forecasts", return_value={})
+    @mock.patch("apps.routing.services.RouteAlternativesService.find")
+    def test_missing_forecasts_are_reported_as_unknown(self, find, _forecasts):
+        find.return_value = [fake_path(0.0, 55)]
+        response = self.client.post("/api/trips/", self.payload(), content_type="application/json")
+
+        self.assertEqual(response.status_code, 201, response.content)
+        route = response.json()["routes"][0]
+        self.assertEqual(route["unknown_miles"], 200.0)
+        self.assertEqual(route["risk_miles"]["low"], 0.0)
+        self.assertEqual(route["forecast_coverage"], 0.0)
+        checkpoint = route["checkpoints"][0]
+        self.assertFalse(checkpoint["has_forecast"])
+        self.assertIsNone(checkpoint["risk"])
+
     @mock.patch(
         "apps.weather.services.WeatherService.forecasts",
         side_effect=ExternalServiceError("Open-Meteo weather rate limit reached. Please try again later."),

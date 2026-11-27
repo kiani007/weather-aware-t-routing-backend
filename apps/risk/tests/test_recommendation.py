@@ -4,9 +4,9 @@ from apps.risk.domain import RiskLevel
 from apps.risk.recommendation import RouteScore, recommend
 
 
-def score(index, severe=0.0, high=0.0, no_travel=0.0, avg=0.0, hours=10.0):
+def score(index, severe=0.0, high=0.0, no_travel=0.0, unknown=0.0, avg=0.0, hours=10.0):
     miles = {RiskLevel.SEVERE: severe, RiskLevel.HIGH: high, RiskLevel.NO_TRAVEL: no_travel}
-    return RouteScore(index, miles, avg, hours * 3600)
+    return RouteScore(index, miles, unknown, avg, hours * 3600)
 
 
 class RecommendationTests(SimpleTestCase):
@@ -28,3 +28,12 @@ class RecommendationTests(SimpleTestCase):
 
     def test_no_travel_miles_rank_worst(self):
         self.assertEqual(recommend([score(0, no_travel=5), score(1, severe=50)]).route_index, 1)
+
+    def test_unknown_weather_does_not_make_a_route_look_safer(self):
+        # Route A: fully forecast, 10 High miles. Route B: no High miles seen, but 50 miles unknown.
+        result = recommend([score(0, high=10), score(1, unknown=50)])
+        self.assertEqual(result.route_index, 0)
+        self.assertIn("unverified weather", result.reason)
+
+    def test_severe_miles_still_outrank_unknown_miles(self):
+        self.assertEqual(recommend([score(0, severe=5), score(1, unknown=50)]).route_index, 1)
