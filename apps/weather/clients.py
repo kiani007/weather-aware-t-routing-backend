@@ -3,6 +3,7 @@ from datetime import datetime
 
 from django.conf import settings
 
+from apps.core.exceptions import ExternalServiceError
 from apps.core.geo import Coordinate
 from apps.core.http import JsonHttpClient
 
@@ -38,12 +39,25 @@ class OpenMeteoClient:
         }
         payload = self.http.get("/v1/forecast", params=params)
         locations = payload if isinstance(payload, list) else [payload]
-        return [self._to_series(location["hourly"]) for location in locations]
+        if len(locations) != len(coordinates):
+            raise ExternalServiceError(
+                f"Open-Meteo weather returned {len(locations)} locations for {len(coordinates)} requested."
+            )
+        return [self._to_series(location) for location in locations]
 
     @staticmethod
-    def _to_series(hourly: dict) -> HourlySeries:
-        def values(key: str) -> tuple[float, ...]:
-            return tuple(v or 0.0 for v in hourly.get(key, []))
+    def _to_series(location: dict) -> HourlySeries:
+        hourly = location.get("hourly")
+        if not isinstance(hourly, dict) or not isinstance(hourly.get("time"), list):
+            raise ExternalServiceError("Open-Meteo weather returned a malformed forecast.")
+        times = tuple(hourly["time"])
 
-        rain = tuple(r + s for r, s in zip(values("rain"), values("showers")))
-        return HourlySeries(tuple(hourly["time"]), values("wind_speed_10m"), rain, values("snowfall"))
+        def values(key: str) -> tuple[float | None, ...]:
+            # A missing field means "unknown" for every hour, never zero
+            raw = hourly.get(key)
+            if not isinstance(raw, list) or len(raw) != len(times):
+                return (None,) * len(times)
+            return tuple(None if v is None else float(v) for v in raw)
+
+        rain = tuple(None if r is None or s is None else r + s for r, s in zip(values("rain"), values("showers")))
+        return HourlySeries(times, values("wind_speed_10m"), rain, values("snowfall"))
