@@ -37,3 +37,9 @@ class RecommendationTests(SimpleTestCase):
 
     def test_severe_miles_still_outrank_unknown_miles(self):
         self.assertEqual(recommend([score(0, severe=5), score(1, unknown=50)]).route_index, 1)
+
+    def test_route_with_no_verified_weather_never_wins_on_average(self):
+        # Equal miles of every kind: only the average can decide, and "no data" must lose it
+        result = recommend([score(0, avg=None, hours=8), score(1, avg=0.4, hours=12)])
+        self.assertEqual(result.route_index, 1)
+        self.assertEqual(result.reason, "Lowest average weather risk (0.40 vs unknown on the next best route).")

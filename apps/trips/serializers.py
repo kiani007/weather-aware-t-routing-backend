@@ -95,7 +95,8 @@ class CheckpointSerializer(serializers.ModelSerializer):
 
 
 class RouteSerializer(serializers.ModelSerializer):
-    max_risk = RiskLevelField()
+    # Null when no checkpoint on the route has a forecast
+    max_risk = RiskLevelField(allow_null=True)
     checkpoints = CheckpointSerializer(many=True, read_only=True)
 
     class Meta:

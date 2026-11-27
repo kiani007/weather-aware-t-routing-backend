@@ -27,8 +27,9 @@ def evaluate_route(
         else:
             risk_miles[checkpoint.assessment.level] += checkpoint.sample.represented_miles
 
+    # With no verified checkpoint there is no risk to report: None, never a "safe" Low / 0.0
     known_miles = sum(risk_miles.values())
-    average = sum(level * miles for level, miles in risk_miles.items()) / known_miles if known_miles else 0.0
+    average = sum(level * miles for level, miles in risk_miles.items()) / known_miles if known_miles else None
     known = [c.assessment.level for c in checkpoints if c.assessment is not None]
 
     return EvaluatedRoute(
@@ -38,7 +39,7 @@ def evaluate_route(
         risk_miles=risk_miles,
         unknown_miles=unknown_miles,
         average_risk=average,
-        max_risk=max(known, default=RiskLevel.LOW),
+        max_risk=max(known, default=None),
         forecast_coverage=len(known) / len(checkpoints) if checkpoints else 0.0,
     )
 

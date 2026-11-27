@@ -40,6 +40,14 @@ class EvaluateRouteTests(SimpleTestCase):
         self.assertEqual(route.unknown_miles, 25.0)
         self.assertEqual(route.risk_miles[RiskLevel.LOW], 0.0)
 
+    def test_route_without_any_forecast_reports_no_risk_level(self):
+        route = evaluate_route(0, PATH, samples(4), {}, load_weight_lb=35_000)
+
+        self.assertEqual(route.forecast_coverage, 0.0)
+        self.assertEqual(route.unknown_miles, 100.0)
+        self.assertIsNone(route.max_risk)
+        self.assertIsNone(route.average_risk)
+
     def test_average_and_max_use_known_miles_only(self):
         points = samples(2)
         route = evaluate_route(0, PATH, points, {points[0].coordinate: series(60.0)}, load_weight_lb=35_000)
