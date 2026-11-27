@@ -39,7 +39,10 @@ class TripPlanner:
             for i, (path, route_samples) in enumerate(zip(paths, samples))
         ]
         recommendation = recommend(
-            [RouteScore(r.index, r.risk_miles, r.average_risk, r.path.duration_seconds) for r in evaluated]
+            [
+                RouteScore(r.index, r.risk_miles, r.unknown_miles, r.average_risk, r.path.duration_seconds)
+                for r in evaluated
+            ]
         )
         logger.info(
             "Planned %d routes, %d checkpoints; recommended index %d",
