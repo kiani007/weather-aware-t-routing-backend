@@ -73,7 +73,8 @@ class RiskLevelField(serializers.Field):
 
 
 class CheckpointSerializer(serializers.ModelSerializer):
-    risk = RiskLevelField(source="risk_level")
+    # Null when the weather at this checkpoint is unknown
+    risk = RiskLevelField(source="risk_level", allow_null=True)
 
     class Meta:
         model = Checkpoint
@@ -109,6 +110,7 @@ class RouteSerializer(serializers.ModelSerializer):
             "duration_s",
             "arrival_at",
             "risk_miles",
+            "unknown_miles",
             "average_risk",
             "max_risk",
             "forecast_coverage",

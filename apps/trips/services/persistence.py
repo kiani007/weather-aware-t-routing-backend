@@ -6,8 +6,9 @@ from django.db import transaction
 from apps.core.geo import simplify
 from apps.risk.recommendation import Recommendation
 
-from ..domain import EvaluatedRoute, TripRequest
+from ..domain import AssessedCheckpoint, EvaluatedRoute, TripRequest
 from ..models import Checkpoint, Route, Trip
+from .evaluation import UNKNOWN_REASON
 
 ROUTE_NAMES = ("Route A", "Route B", "Route C", "Route D", "Route E")
 DISPLAY_TOLERANCE_DEG = 0.0004
@@ -48,6 +49,7 @@ def _build_route(trip: Trip, route: EvaluatedRoute, request: TripRequest, recomm
         duration_s=round(route.path.duration_seconds),
         arrival_at=request.departure_at + timedelta(seconds=route.path.duration_seconds),
         risk_miles={level.key: round(miles, 1) for level, miles in route.risk_miles.items()},
+        unknown_miles=round(route.unknown_miles, 1),
         average_risk=round(route.average_risk, 3),
         max_risk=route.max_risk,
         forecast_coverage=round(route.forecast_coverage, 3),
@@ -56,8 +58,8 @@ def _build_route(trip: Trip, route: EvaluatedRoute, request: TripRequest, recomm
     )
 
 
-def _build_checkpoint(route: Route, checkpoint) -> Checkpoint:
-    sample, conditions = checkpoint.sample, checkpoint.conditions
+def _build_checkpoint(route: Route, checkpoint: AssessedCheckpoint) -> Checkpoint:
+    sample, conditions, assessment = checkpoint.sample, checkpoint.conditions, checkpoint.assessment
     return Checkpoint(
         route=route,
         sequence=sample.sequence,
@@ -70,6 +72,6 @@ def _build_checkpoint(route: Route, checkpoint) -> Checkpoint:
         wind_mph=conditions.wind_mph if conditions else None,
         rain_in_hr=conditions.rain_in_hr if conditions else None,
         snow_in_hr=conditions.snow_in_hr if conditions else None,
-        risk_level=checkpoint.assessment.level,
-        reasons=list(checkpoint.assessment.reasons),
+        risk_level=assessment.level if assessment else None,
+        reasons=list(assessment.reasons) if assessment else [UNKNOWN_REASON],
     )

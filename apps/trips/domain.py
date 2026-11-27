@@ -25,7 +25,8 @@ class TripRequest:
 class AssessedCheckpoint:
     sample: CheckpointSample
     conditions: WeatherConditions | None
-    assessment: RiskAssessment
+    # None when the weather at this checkpoint's ETA is unknown (no forecast data)
+    assessment: RiskAssessment | None
 
 
 @dataclass(frozen=True)
@@ -33,7 +34,11 @@ class EvaluatedRoute:
     index: int
     path: RoutePath
     checkpoints: list[AssessedCheckpoint]
+    # Miles per risk level, counting only checkpoints with a forecast
     risk_miles: dict[RiskLevel, float]
+    # Miles whose weather could not be verified
+    unknown_miles: float
+    # Averaged over known miles only, so missing data cannot make a route look safer
     average_risk: float
     max_risk: RiskLevel
     forecast_coverage: float

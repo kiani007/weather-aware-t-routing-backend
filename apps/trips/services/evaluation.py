@@ -1,12 +1,12 @@
 from apps.core.geo import Coordinate
-from apps.risk.domain import RiskAssessment, RiskLevel
+from apps.risk.domain import RiskLevel
 from apps.risk.services import assess_risk
 from apps.routing.domain import CheckpointSample, RoutePath
 from apps.weather.domain import HourlySeries
 
 from ..domain import AssessedCheckpoint, EvaluatedRoute
 
-NO_FORECAST = RiskAssessment(RiskLevel.LOW, ("No forecast available for this ETA",))
+UNKNOWN_REASON = "No forecast available for this ETA"
 
 
 def evaluate_route(
@@ -18,26 +18,32 @@ def evaluate_route(
 ) -> EvaluatedRoute:
     checkpoints = [_assess(sample, forecasts.get(sample.coordinate), load_weight_lb) for sample in samples]
 
+    # Unknown weather is tracked separately: it is never counted as Low risk
     risk_miles = {level: 0.0 for level in RiskLevel}
+    unknown_miles = 0.0
     for checkpoint in checkpoints:
-        risk_miles[checkpoint.assessment.level] += checkpoint.sample.represented_miles
+        if checkpoint.assessment is None:
+            unknown_miles += checkpoint.sample.represented_miles
+        else:
+            risk_miles[checkpoint.assessment.level] += checkpoint.sample.represented_miles
 
-    total_miles = sum(risk_miles.values()) or 1.0
-    average = sum(level * miles for level, miles in risk_miles.items()) / total_miles
-    covered = sum(1 for c in checkpoints if c.conditions is not None)
+    known_miles = sum(risk_miles.values())
+    average = sum(level * miles for level, miles in risk_miles.items()) / known_miles if known_miles else 0.0
+    known = [c.assessment.level for c in checkpoints if c.assessment is not None]
 
     return EvaluatedRoute(
         index=index,
         path=path,
         checkpoints=checkpoints,
         risk_miles=risk_miles,
+        unknown_miles=unknown_miles,
         average_risk=average,
-        max_risk=max((c.assessment.level for c in checkpoints), default=RiskLevel.LOW),
-        forecast_coverage=covered / len(checkpoints) if checkpoints else 0.0,
+        max_risk=max(known, default=RiskLevel.LOW),
+        forecast_coverage=len(known) / len(checkpoints) if checkpoints else 0.0,
     )
 
 
 def _assess(sample: CheckpointSample, series: HourlySeries | None, load_weight_lb: float) -> AssessedCheckpoint:
     conditions = series.at(sample.eta) if series else None
-    assessment = assess_risk(conditions, load_weight_lb) if conditions else NO_FORECAST
+    assessment = assess_risk(conditions, load_weight_lb) if conditions else None
     return AssessedCheckpoint(sample, conditions, assessment)
