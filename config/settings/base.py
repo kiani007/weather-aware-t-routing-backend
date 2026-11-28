@@ -121,6 +121,9 @@ EXTERNAL_APIS = {
     "OSRM_BASE_URL": env("OSRM_BASE_URL", default="https://router.project-osrm.org"),
     "PHOTON_BASE_URL": env("PHOTON_BASE_URL", default="https://photon.komoot.io"),
     "OPEN_METEO_BASE_URL": env("OPEN_METEO_BASE_URL", default="https://api.open-meteo.com"),
+    "OPEN_METEO_GEOCODING_BASE_URL": env(
+        "OPEN_METEO_GEOCODING_BASE_URL", default="https://geocoding-api.open-meteo.com"
+    ),
     "USER_AGENT": env("EXTERNAL_USER_AGENT", default="watr/1.0"),
     "TIMEOUT_SECONDS": env.float("EXTERNAL_TIMEOUT_SECONDS", default=20.0),
     "RETRIES": env.int("EXTERNAL_RETRIES", default=2),

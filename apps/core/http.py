@@ -15,15 +15,22 @@ logger = logging.getLogger(__name__)
 class JsonHttpClient:
     """Thin requests wrapper with pooling, retries, timeouts and structured logging."""
 
-    def __init__(self, base_url: str, service_name: str):
+    def __init__(
+        self,
+        base_url: str,
+        service_name: str,
+        timeout: float | tuple[float, float] | None = None,
+        retries: int | None = None,
+    ):
+        """`timeout` and `retries` override the shared defaults, e.g. to fail fast on a service with a fallback."""
         config = settings.EXTERNAL_APIS
         self.base_url = base_url.rstrip("/")
         self.service_name = service_name
-        self.timeout = config["TIMEOUT_SECONDS"]
+        self.timeout = config["TIMEOUT_SECONDS"] if timeout is None else timeout
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": config["USER_AGENT"], "Accept": "application/json"})
         retry = Retry(
-            total=config["RETRIES"],
+            total=config["RETRIES"] if retries is None else retries,
             backoff_factor=0.5,
             status_forcelist=(500, 502, 503, 504),
             allowed_methods=("GET",),

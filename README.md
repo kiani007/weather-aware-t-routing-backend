@@ -16,7 +16,7 @@ Django REST API that plans truck routes, checks the weather each route will meet
 - Recommends a route and explains why.
 - Saves trips and serves a 48-hour weather heatmap.
 
-Stack: Python 3.10+, Django 5.2, Django REST Framework. Database: PostgreSQL in production, SQLite locally if no database is configured. Place search uses Photon. No API keys needed.
+Stack: Python 3.10+, Django 5.2, Django REST Framework. Database: PostgreSQL in production, SQLite locally if no database is configured. Place search uses Photon, with Open-Meteo as a backup. No API keys needed.
 
 ## Risk rules
 
